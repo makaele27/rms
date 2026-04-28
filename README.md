@@ -1,4 +1,4 @@
-# 🍽️ Restaurant Table Manager
+# 🍽️ Reservation Management System
 
 A fully front-end restaurant operations platform built with HTML, CSS, and vanilla JavaScript. No server, no build tools, no dependencies — open `index.html` in any modern browser and you're running.
 
@@ -20,8 +20,8 @@ A fully front-end restaurant operations platform built with HTML, CSS, and vanil
 ## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/your-org/restaurant-table-manager.git
-cd restaurant-table-manager
+git clone https://github.com/your-org/rms.git
+cd rms
 open index.html          # macOS
 start index.html         # Windows
 xdg-open index.html      # Linux
@@ -34,7 +34,7 @@ No npm install. No build step. Works offline after the Google Fonts request reso
 ## 📁 Project Structure
 
 ```
-restaurant-table-manager/
+rms/
 ├── index.html              # Entry point — markup and layout
 ├── src/
 │   ├── css/
