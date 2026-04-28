@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant Table Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/styles.css">
+</head>
+<body>
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ HEADER ═══════════════════ -->
+<div class="header">
+  <div>
+    <h1>🍽 Table Manager</h1>
+    <div class="sub">Reservations · Floor Plan · Daily Summary</div>
+  </div>
+  <div style="font-size:0.78rem;opacity:0.45;" id="todayLabel"></div>
+</div>
+
+<!-- ═══════════════════ NAV ═══════════════════ -->
+<div class="nav">
+  <div class="nav-tab active"  data-view="bookings"  onclick="switchView('bookings',this)">📅 Bookings</div>
+  <div class="nav-tab"         data-view="floorplan" onclick="switchView('floorplan',this)">🪑 Floor Plan</div>
+  <div class="nav-tab"         data-view="daily"     onclick="switchView('daily',this)">📋 Daily Summary</div>
+  <div class="nav-tab"         data-view="guests"    onclick="switchView('guests',this)">👥 Guest History</div>
+  <div class="nav-tab"         data-view="reporting" onclick="switchView('reporting',this)">📊 Reporting</div>
+</div>
+
+<div class="content">
+
+  <!-- ═════════════════ BOOKINGS VIEW ═════════════════ -->
+  <div id="view-bookings" class="view active">
+    <div class="section-header">
+      <div class="section-title">Reservations</div>
+      <button class="btn btn-primary" onclick="openModal()">+ New Booking</button>
+    </div>
+    <div class="filter-bar">
+      <span class="filter-label">Show:</span>
+      <button class="btn btn-secondary btn-sm filter-btn active-filter" id="fb-upcoming" onclick="setFilter('upcoming',this)">Upcoming</button>
+      <button class="btn btn-secondary btn-sm filter-btn" id="fb-today"    onclick="setFilter('today',this)">Today</button>
+      <button class="btn btn-secondary btn-sm filter-btn" id="fb-all"      onclick="setFilter('all',this)">All</button>
+      <span class="filter-label" style="margin-left:8px;">or pick date:</span>
+      <input type="date" id="filterDate" onchange="setFilter('date',null)" style="font-size:0.8rem;padding:6px 10px;border-radius:8px;">
+    </div>
+    <div id="bookingsList"></div>
+  </div>
+
+  <!-- ═════════════════ FLOOR PLAN VIEW ═════════════════ -->
+  <div id="view-floorplan" class="view">
+    <div class="section-header">
+      <div class="section-title">Floor Plan Editor</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-success"   onclick="openAddTable()">+ Add Table</button>
+        <button class="btn btn-secondary" id="mergeBtn" onclick="toggleMerge()">🔗 Merge Mode</button>
+        <button class="btn btn-secondary" onclick="resetLayout()">↺ Reset</button>
+        <button class="btn btn-primary"   onclick="saveLayout()">💾 Save Layout</button>
+      </div>
+    </div>
+
+    <div class="merge-bar" id="mergeBar">
+      <span class="merge-bar-text">🔗 <strong>Merge Mode:</strong> Click tables to select, then click "Create Group"</span>
+      <span id="selCount" style="font-size:0.8rem;color:var(--coffee);"></span>
+      <button class="btn btn-success btn-sm" onclick="createGroup()">✓ Create Group</button>
+      <button class="btn btn-secondary btn-sm" onclick="cancelMerge()">✕ Cancel</button>
+    </div>
+
+    <div class="floor-plan" id="floorPlan">
+      <div class="floor-title">DINING ROOM</div>
+      <div class="floor-hint">Drag to move · Click to edit</div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--espresso);"></div>Small table (2–4 seats)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--coffee);"></div>Large table (6–8 seats)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--sage);"></div>Merged group</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--terracotta);"></div>Booked today</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="card-title">Table Groups (Merged)</div>
+      <div id="groupsList"></div>
+    </div>
+  </div>
+
+  <!-- ═════════════════ DAILY SUMMARY VIEW ═════════════════ -->
+  <div id="view-daily" class="view">
+    <div class="section-header">
+      <div class="section-title">Daily Summary</div>
+      <button class="btn btn-secondary" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>
+    <div class="filter-bar">
+      <span class="filter-label">Date:</span>
+      <input type="date" id="summaryDate" onchange="renderDaily()" style="font-size:0.9rem;padding:8px 12px;border-radius:8px;">
+      <button class="btn btn-secondary btn-sm" onclick="setDailyToday()">Today</button>
+    </div>
+    <div class="stats-row" id="dailyStats"></div>
+
+    <!-- Booking schedule (full width) -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title">Booking Schedule</div>
+      <div id="dailySchedule"></div>
+    </div>
+
+    <!-- Table Status floor plan (full width, clickable) -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div class="card-title" style="margin-bottom:0;">Table Status</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--espresso);"></div>Available</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--terracotta);"></div>Has bookings</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--sage);"></div>In a group</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+        <div style="font-size:0.75rem;color:var(--coffee);opacity:0.7;">Click any table to view its booking schedule for the day.</div>
+        <div class="fp-zoom-controls">
+          <button class="fp-zoom-btn" onclick="fpZoomOut()" title="Zoom out">−</button>
+          <span class="fp-zoom-label" id="fpZoomLabel">100%</span>
+          <button class="fp-zoom-btn" onclick="fpZoomIn()" title="Zoom in">+</button>
+          <button class="fp-zoom-btn" onclick="fpZoomReset()" title="Reset" style="font-size:0.75rem;width:auto;padding:0 10px;">Reset</button>
+        </div>
+      </div>
+      <div class="fp-zoom-wrap" id="fpZoomWrap">
+        <div class="fp-zoom-inner" id="fpZoomInner">
+          <div id="dailyFloor"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table schedule popover -->
+  <div class="modal-overlay" id="tableScheduleModal">
+    <div class="modal" style="max-width:480px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div class="modal-title" id="tsModalTitle" style="margin-bottom:0;"></div>
+        <button onclick="closeTableSchedule()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--coffee);line-height:1;">✕</button>
+      </div>
+      <div id="tsModalBody"></div>
+    </div>
+  </div>
+
+  <!-- ═════════════════ GUEST HISTORY VIEW ═════════════════ -->
+  <div id="view-guests" class="view">
+    <div class="section-header">
+      <div class="section-title">Guest History</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-primary"  onclick="openGuestModal()">+ New Guest</button>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <span class="filter-label">Search:</span>
+      <input type="text" id="guestSearch" placeholder="Name, phone, or email…" oninput="renderGuests()" style="font-size:0.84rem;padding:7px 11px;border-radius:8px;min-width:240px;">
+      <span class="filter-label" style="margin-left:8px;">Sort by:</span>
+      <select id="guestSort" onchange="renderGuests()" style="font-size:0.84rem;padding:7px 11px;border-radius:8px;">
+        <option value="name">Name A–Z</option>
+        <option value="visits">Most Visits</option>
+        <option value="recent">Most Recent</option>
+      </select>
+    </div>
+    <div id="guestSummaryBar" style="display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap;"></div>
+    <div id="guestList"></div>
+  </div>
+
+  <!-- ═════════════════ REPORTING VIEW ═════════════════ -->
+  <div id="view-reporting" class="view">
+    <div class="section-header">
+      <div class="section-title">Reporting</div>
+    </div>
+
+    <!-- ── Analytics Dashboard ── -->
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
+        <div class="card-title" style="margin-bottom:0;">📊 Analytics Dashboard</div>
+        <div class="dash-range-tabs" id="dashRangeTabs">
+          <div class="dash-range-tab active" onclick="setDashRange('7',this)">7 Days</div>
+          <div class="dash-range-tab" onclick="setDashRange('30',this)">30 Days</div>
+          <div class="dash-range-tab" onclick="setDashRange('90',this)">90 Days</div>
+        </div>
+      </div>
+      <div id="dashboardOutput"></div>
+    </div>
+
+    <!-- ── Daily Guest Report ── -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title">📋 Daily Guest Report</div>
+      <div class="filter-bar" style="margin-bottom:20px;">
+        <span class="filter-label">Date:</span>
+        <input type="date" id="reportDate" onchange="renderDailyReport()" style="font-size:0.9rem;padding:8px 12px;border-radius:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="setReportToday()">Today</button>
+        <button class="btn btn-primary btn-sm" onclick="copyReport()">📋 Copy Report</button>
+        <button class="btn btn-gold btn-sm" onclick="exportReportExcel()">⬇ Export Excel</button>
+      </div>
+      <div id="dailyReportOutput"></div>
+    </div>
+
+    <!-- ── Guest Data Export ── -->
+    <div class="card">
+      <div class="card-title">📤 Guest Data Export</div>
+      <p style="font-size:0.84rem;color:var(--coffee);margin-bottom:18px;">Export the full guest history database for records or analysis.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-success" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="btn btn-gold"    onclick="exportExcel()">⬇ Export Excel (.xls)</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- ═══════════════════ RESCHEDULE MODAL ═══════════════════ -->
+<div class="modal-overlay" id="rescheduleModal">
+  <div class="modal" style="max-width:420px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div class="modal-title" style="margin-bottom:0;">🔄 Reschedule Reservation</div>
+      <button onclick="closeRescheduleModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--coffee);line-height:1;">✕</button>
+    </div>
+    <div id="rescheduleGuestInfo" style="padding:12px 14px;background:var(--parchment);border-radius:9px;margin-bottom:20px;font-size:0.88rem;color:var(--espresso);"></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>New Date *</label>
+        <input type="date" id="rsDate">
+      </div>
+      <div class="form-group">
+        <label>New Start Time *</label>
+        <input type="time" id="rsTime">
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>New End Time <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;color:#aaa;">(optional)</span></label>
+        <input type="time" id="rsEndTime">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="confirmReschedule()">✓ Confirm Reschedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ BOOKING MODAL ═══════════════════ -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">New Reservation</div>
+
+    <!-- ── Guest Details ── -->
+    <div class="modal-section-label">Guest Details</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Guest Name *</label>
+        <div class="phone-wrap">
+          <input type="text" id="fName" placeholder="e.g. Sarah Tan" oninput="onNameInput()" onblur="hideNameSuggestions()" autocomplete="off">
+          <div class="phone-suggestions" id="nameSuggestions"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <div class="phone-wrap">
+          <input type="tel" id="fPhone" placeholder="e.g. 0812-3456-7890 or +1 555 000 0000" oninput="onPhoneInput()" onblur="onPhoneBlur()" autocomplete="off">
+          <div class="phone-suggestions" id="phoneSuggestions"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <div class="phone-wrap">
+          <input type="email" id="fEmail" placeholder="e.g. guest@email.com" oninput="onEmailInput()" onblur="hideEmailSuggestions()" autocomplete="off">
+          <div class="phone-suggestions" id="emailSuggestions"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Gender</label>
+        <select id="fGender">
+          <option value="">— Not specified —</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other / Prefer not to say</option>
+        </select>
+      </div>
+      <div class="autofill-banner" id="autofillBanner">
+        ✅ <span id="autofillMsg">Guest details filled from profile</span>
+        <button onclick="clearAutofill()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:0.75rem;color:var(--coffee);text-decoration:underline;padding:0;">Clear</button>
+      </div>
+    </div>
+
+    <!-- ── Reservation Details ── -->
+    <div class="modal-section-label">Reservation Details</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Party Size *</label>
+        <input type="number" id="fSize" min="1" max="60" placeholder="e.g. 4" oninput="refreshTableSelect()">
+      </div>
+      <div class="form-group">
+        <label>Date *</label>
+        <input type="date" id="fDate" onchange="refreshTableSelect()">
+      </div>
+      <div class="form-group">
+        <label>Start Time *</label>
+        <input type="time" id="fTime" onchange="refreshTableSelect()">
+      </div>
+      <div class="form-group">
+        <label>End Time <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;color:#aaa;">(optional — leave blank for no limit)</span></label>
+        <input type="time" id="fEndTime" onchange="refreshTableSelect()">
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Tables / Groups <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;color:#aaa;">(tick one or more)</span></label>
+        <div id="tableChecklist" class="table-checklist"></div>
+        <div class="conflict-note" id="conflictNote"></div>
+      </div>
+    </div>
+
+    <!-- ── Additional Info ── -->
+    <div class="modal-section-label">Additional Info</div>
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Details <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;color:#aaa;">(select all that apply)</span></label>
+        <div class="tag-picker" id="fDetails">
+          <label class="tag-opt"><input type="checkbox" value="Big Group"> Big Group</label>
+          <label class="tag-opt"><input type="checkbox" value="Birthday"> 🎂 Birthday</label>
+          <label class="tag-opt"><input type="checkbox" value="Alcohol"> 🍾 Alcohol</label>
+          <label class="tag-opt"><input type="checkbox" value="Regular Guest"> ⭐ Regular Guest</label>
+          <label class="tag-opt"><input type="checkbox" value="Friends & Family (5% Discount)"> 👨‍👩‍👧 Friends &amp; Family (5% Discount)</label>
+          <label class="tag-opt"><input type="checkbox" value="KOL"> 📣 KOL</label>
+          <label class="tag-opt"><input type="checkbox" value="BOD (10% Discount)"> 👔 BOD (10% Discount)</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>RSVP Via</label>
+        <select id="fRsvp">
+          <option value="">— Select —</option>
+          <option value="WA">WhatsApp</option>
+          <option value="Walkin">Walk-in</option>
+          <option value="Staff">Staff</option>
+          <option value="BOD">BOD</option>
+          <option value="Phone">Phone</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="fStatus">
+          <option value="confirmed">Confirmed</option>
+          <option value="seated">Seated</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Reservation Taken By</label>
+        <select id="fTakenBy">
+          <option value="">— Select —</option>
+          <option value="Rhenata">Rhenata</option>
+          <option value="Salsa">Salsa</option>
+          <option value="Nabila">Nabila</option>
+          <option value="Nina">Nina</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Notes</label>
+        <textarea id="fNotes" placeholder="Allergies, occasions, special requests…"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="delBtn" onclick="deleteBooking()" style="display:none;">🗑 Delete</button>
+      <button class="btn btn-primary" onclick="saveBooking()">Save Reservation</button>
+    </div>
+  </div>
+</div>
+
+<div class="tbl-modal-overlay" id="tableModal">
+  <div class="tbl-modal">
+    <div class="tbl-modal-title" id="tblModalTitle">Edit Table</div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="form-group">
+        <label>Table Name / Number</label>
+        <input type="text" id="tName" placeholder="e.g. T1 or Window Table" maxlength="12">
+      </div>
+      <div class="form-group">
+        <label>Seating Capacity</label>
+        <input type="number" id="tCap" min="1" max="30" placeholder="e.g. 4">
+      </div>
+      <div class="form-group">
+        <label>Table Size</label>
+        <div class="size-options">
+          <div class="size-opt selected" id="sizeSmall" onclick="selectSize('small')">
+            <div class="opt-icon">🟫</div>
+            <div class="opt-label">Small</div>
+            <div class="opt-sub">2–4 seats</div>
+          </div>
+          <div class="size-opt" id="sizeLarge" onclick="selectSize('large')">
+            <div class="opt-icon">🟫🟫</div>
+            <div class="opt-label">Large</div>
+            <div class="opt-sub">5–8+ seats</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeTblModal()">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="tblDelBtn" onclick="deleteTable()" style="display:none;">🗑 Delete Table</button>
+      <button class="btn btn-primary" onclick="saveTbl()">Save Table</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ GUEST PROFILE MODAL ═══════════════════ -->
+<div class="modal-overlay" id="guestModal">
+  <div class="modal" style="max-width:500px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div class="modal-title" id="guestModalTitle" style="margin-bottom:0;">New Guest Profile</div>
+      <button onclick="closeGuestModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--coffee);line-height:1;">✕</button>
+    </div>
+
+    <div class="modal-section-label">Contact Details</div>
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Full Name *</label>
+        <input type="text" id="gfName" placeholder="e.g. Sarah Tan">
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="gfPhone" placeholder="e.g. 08123456789" onblur="guestPhoneBlur()">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="gfEmail" placeholder="e.g. sarah@email.com">
+      </div>
+      <div class="form-group">
+        <label>Gender</label>
+        <select id="gfGender">
+          <option value="">— Not specified —</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other / Prefer not to say</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input type="text" id="gfNotes" placeholder="e.g. VIP, allergies, preferences…">
+      </div>
+    </div>
+
+    <div class="modal-section-label" style="margin-top:20px;">Special Tags</div>
+    <div class="form-group">
+      <label>Tags <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;color:#aaa;">(select all that apply)</span></label>
+      <div class="tag-picker" id="gfTags">
+        <label class="tag-opt"><input type="checkbox" value="Friends & Family (5% Discount)"> 👨‍👩‍👧 Friends &amp; Family (5% Discount)</label>
+        <label class="tag-opt"><input type="checkbox" value="KOL"> 📣 KOL</label>
+        <label class="tag-opt"><input type="checkbox" value="BOD (10% Discount)"> 👔 BOD (10% Discount)</label>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeGuestModal()">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="guestDelBtn" onclick="deleteGuestProfile()" style="display:none;">🗑 Delete Guest</button>
+      <button class="btn btn-primary" onclick="saveGuestProfile()">Save Guest</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="src/js/app.js"></script>
+</body>
+</html>
