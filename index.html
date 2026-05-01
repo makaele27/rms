@@ -774,6 +774,154 @@
     background: var(--brand-dark); color: var(--gold);
     font-family: 'Parkinsans', sans-serif;
   }
+
+  /* ── Header host button ── */
+  .header-host-btn {
+    display: flex; align-items: center; gap: 7px;
+    padding: 5px 12px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.15);
+    cursor: pointer;
+    transition: background 0.18s, border-color 0.18s;
+    font-family: inherit;
+    user-select: none;
+  }
+  .header-host-btn:hover {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.28);
+  }
+  .header-host-btn .hb-arrow {
+    font-size: 0.6rem;
+    opacity: 0.5;
+    margin-left: 2px;
+    transition: opacity 0.15s;
+  }
+  .header-host-btn:hover .hb-arrow { opacity: 0.9; }
+
+  /* No-host button */
+  .header-host-btn.no-host {
+    background: rgba(255,255,255,0.06);
+    border-style: dashed;
+  }
+  .header-host-btn.no-host:hover {
+    background: rgba(255,255,255,0.13);
+  }
+
+  /* ── Quick-switch PIN pad overlay ── */
+  .pinpad-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(20,10,4,0.62);
+    z-index: 9800;
+    align-items: flex-start; justify-content: flex-end;
+  }
+  .pinpad-overlay.open { display: flex; }
+  .pinpad-popup {
+    margin-top: 58px; margin-right: 24px;
+    background: var(--brand-dark);
+    border-radius: 16px;
+    padding: 22px 22px 20px;
+    width: 260px;
+    box-shadow: 0 28px 72px rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.1);
+    animation: pinpadIn 0.18s cubic-bezier(.4,0,.2,1);
+  }
+  @keyframes pinpadIn {
+    from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)     scale(1);    }
+  }
+  .pinpad-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem; color: var(--brand-cream);
+    margin-bottom: 4px; text-align: center;
+  }
+  .pinpad-subtitle {
+    font-size: 0.68rem; color: rgba(250,246,238,0.42);
+    text-align: center; margin-bottom: 14px;
+    text-transform: uppercase; letter-spacing: 0.09em;
+  }
+  .pinpad-host-select {
+    width: 100%; padding: 8px 10px;
+    border-radius: 8px;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08);
+    color: var(--brand-cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.84rem;
+    margin-bottom: 14px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(250,246,238,0.4)'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+  }
+  .pinpad-host-select:focus { outline: none; border-color: var(--gold); }
+  .pinpad-host-select option { background: #2C1A0E; color: var(--brand-cream); }
+
+  /* PIN dots display */
+  .pinpad-dots {
+    display: flex; justify-content: center; gap: 10px;
+    margin-bottom: 18px;
+  }
+  .pinpad-dot {
+    width: 13px; height: 13px; border-radius: 50%;
+    border: 2px solid rgba(250,246,238,0.3);
+    background: transparent;
+    transition: background 0.12s, border-color 0.12s, transform 0.12s;
+  }
+  .pinpad-dot.filled {
+    background: var(--gold);
+    border-color: var(--gold);
+    transform: scale(1.15);
+  }
+  .pinpad-dot.shake { animation: dotShake 0.35s ease; }
+  @keyframes dotShake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-5px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(3px); }
+  }
+
+  /* PIN grid */
+  .pinpad-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px; margin-bottom: 10px;
+  }
+  .pinpad-key {
+    height: 50px; border-radius: 10px;
+    border: 1.5px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.07);
+    color: var(--brand-cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.15rem; font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, transform 0.1s, border-color 0.12s;
+    display: flex; align-items: center; justify-content: center;
+    user-select: none;
+  }
+  .pinpad-key:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.22); }
+  .pinpad-key:active { transform: scale(0.93); background: rgba(255,255,255,0.22); }
+  .pinpad-key.key-del { font-size: 1rem; color: rgba(250,246,238,0.55); }
+  .pinpad-key.key-del:hover { color: var(--brand-cream); }
+
+  /* Error message */
+  .pinpad-error {
+    text-align: center; font-size: 0.74rem;
+    color: #ff7b7b; min-height: 20px;
+    margin-top: 4px; letter-spacing: 0.03em;
+  }
+
+  /* Cancel link */
+  .pinpad-cancel {
+    display: block; text-align: center;
+    font-size: 0.72rem; color: rgba(250,246,238,0.38);
+    margin-top: 12px; cursor: pointer;
+    letter-spacing: 0.07em; text-transform: uppercase;
+    transition: color 0.15s;
+  }
+  .pinpad-cancel:hover { color: rgba(250,246,238,0.7); }
 </style>
 </head>
 <body>
@@ -1410,6 +1558,39 @@
       <button class="btn btn-danger btn-sm" id="guestDelBtn" onclick="deleteGuestProfile()" style="display:none;">🗑 Delete Guest</button>
       <button class="btn btn-primary" onclick="saveGuestProfile()">Save Guest</button>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ QUICK-SWITCH PIN PAD ═══════════════════ -->
+<div class="pinpad-overlay" id="pinpadOverlay" onclick="handlePinpadOverlayClick(event)">
+  <div class="pinpad-popup" id="pinpadPopup">
+    <div class="pinpad-title">Switch Host</div>
+    <div class="pinpad-subtitle">Enter your PIN to log in</div>
+
+    <div class="pinpad-dots" id="pinpadDots">
+      <div class="pinpad-dot" id="ppd0"></div>
+      <div class="pinpad-dot" id="ppd1"></div>
+      <div class="pinpad-dot" id="ppd2"></div>
+      <div class="pinpad-dot" id="ppd3"></div>
+    </div>
+
+    <div class="pinpad-grid">
+      <button class="pinpad-key" onclick="pinpadKey('1')">1</button>
+      <button class="pinpad-key" onclick="pinpadKey('2')">2</button>
+      <button class="pinpad-key" onclick="pinpadKey('3')">3</button>
+      <button class="pinpad-key" onclick="pinpadKey('4')">4</button>
+      <button class="pinpad-key" onclick="pinpadKey('5')">5</button>
+      <button class="pinpad-key" onclick="pinpadKey('6')">6</button>
+      <button class="pinpad-key" onclick="pinpadKey('7')">7</button>
+      <button class="pinpad-key" onclick="pinpadKey('8')">8</button>
+      <button class="pinpad-key" onclick="pinpadKey('9')">9</button>
+      <button class="pinpad-key" onclick="pinpadClear()" style="font-size:0.75rem;color:rgba(250,246,238,0.45);">CLR</button>
+      <button class="pinpad-key" onclick="pinpadKey('0')">0</button>
+      <button class="pinpad-key key-del" onclick="pinpadDelete()">⌫</button>
+    </div>
+
+    <div class="pinpad-error" id="pinpadError"></div>
+    <span class="pinpad-cancel" onclick="closePinpad()">Cancel</span>
   </div>
 </div>
 
@@ -3743,7 +3924,7 @@ function refreshModTabVisibility() {
   // Tab is always visible — access control is handled inside the panel
 }
 
-// ── Header active-host chip ──
+// ── Header active-host chip (now a quick-switch button) ──
 function renderHeaderHostChip() {
   const ah = getActiveHost();
   let el = document.getElementById('headerHostChip');
@@ -3755,14 +3936,107 @@ function renderHeaderHostChip() {
     if (right) right.prepend(el);
   }
   if (ah) {
-    el.innerHTML = `<div style="display:flex;align-items:center;gap:7px;padding:5px 12px;background:rgba(255,255,255,0.1);border-radius:8px;border:1px solid rgba(255,255,255,0.15);">
+    el.innerHTML = `<button class="header-host-btn" onclick="openPinpad()" title="Switch host">
       <span style="width:7px;height:7px;border-radius:50%;background:var(--gold);display:inline-block;animation:timerPulse 1.6s ease-in-out infinite;flex-shrink:0;"></span>
       <span style="font-size:0.72rem;color:var(--brand-cream);font-weight:500;">${esc(ah.name)}</span>
       <span class="login-id-badge">#${ah.loginId}</span>
-    </div>`;
+      <span class="hb-arrow">▾</span>
+    </button>`;
   } else {
-    el.innerHTML = '';
+    el.innerHTML = `<button class="header-host-btn no-host" onclick="openPinpad()" title="Log in">
+      <span style="font-size:0.72rem;color:rgba(250,246,238,0.55);font-weight:500;">No host</span>
+      <span class="hb-arrow">▾</span>
+    </button>`;
   }
+}
+
+// ── PIN pad state ──
+let _pinpadBuffer = '';
+
+function openPinpad() {
+  ensureModData();
+  _pinpadBuffer = '';
+  pinpadUpdateDots();
+  document.getElementById('pinpadError').textContent = '';
+  document.getElementById('pinpadOverlay').classList.add('open');
+}
+
+function closePinpad() {
+  document.getElementById('pinpadOverlay').classList.remove('open');
+  _pinpadBuffer = '';
+}
+
+function handlePinpadOverlayClick(e) {
+  if (e.target === document.getElementById('pinpadOverlay')) closePinpad();
+}
+
+function pinpadResetInput() {
+  _pinpadBuffer = '';
+  pinpadUpdateDots();
+  document.getElementById('pinpadError').textContent = '';
+}
+
+function pinpadKey(digit) {
+  if (_pinpadBuffer.length >= 4) return;
+  _pinpadBuffer += digit;
+  pinpadUpdateDots();
+  if (_pinpadBuffer.length === 4) {
+    // Auto-submit after brief visual pause
+    setTimeout(pinpadSubmit, 180);
+  }
+}
+
+function pinpadDelete() {
+  if (!_pinpadBuffer.length) return;
+  _pinpadBuffer = _pinpadBuffer.slice(0, -1);
+  pinpadUpdateDots();
+  document.getElementById('pinpadError').textContent = '';
+}
+
+function pinpadClear() {
+  _pinpadBuffer = '';
+  pinpadUpdateDots();
+  document.getElementById('pinpadError').textContent = '';
+}
+
+function pinpadUpdateDots() {
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById('ppd' + i);
+    if (d) d.classList.toggle('filled', i < _pinpadBuffer.length);
+  }
+}
+
+function pinpadShakeError(msg) {
+  document.getElementById('pinpadError').textContent = msg;
+  const dots = document.querySelectorAll('.pinpad-dot');
+  dots.forEach(d => { d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake'); });
+  _pinpadBuffer = '';
+  setTimeout(pinpadUpdateDots, 10);
+}
+
+function pinpadSubmit() {
+  ensureModData();
+  const host = S.hosts.find(h => h.pin === _pinpadBuffer);
+  if (!host) {
+    pinpadShakeError('PIN not recognised. Try again.');
+    return;
+  }
+  // Success — log out previous, log in new
+  const prev = getActiveHost();
+  if (prev && prev.id === host.id) {
+    // Same host — just confirm
+    closePinpad();
+    toast(`Already logged in as ${host.name}`);
+    return;
+  }
+  if (prev) logAudit('LOGOUT', `${prev.name} logged out (quick switch)`);
+  setActiveHost(host);
+  logAudit('LOGIN', `${host.name} logged in`, { hostId: host.id, hostName: host.name, loginId: host.loginId });
+  renderHeaderHostChip();
+  renderAccountsPanel();
+  refreshModTabVisibility();
+  closePinpad();
+  toast(`Welcome, ${host.name}`);
 }
 
 // ── Generate unique login ID (short, numeric + letter) ──
