@@ -952,6 +952,7 @@
   <div class="nav-tab"         data-view="guests"    onclick="switchView('guests',this)">👥 Guests</div>
   <div class="nav-tab"         data-view="reporting"  onclick="switchView('reporting',this)">📊 Reports</div>
   <div class="nav-tab mod-tab" data-view="moderator" onclick="switchView('moderator',this)" id="modNavTab">🔐 Moderator</div>
+  <div class="nav-tab" data-view="system" onclick="switchView('system',this)" id="systemNavTab">⚙️ System</div>
 </div>
 
 <div class="content">
@@ -1225,6 +1226,79 @@
 
   </div>
 
+  <!-- ═════════════════ SYSTEM VIEW ═════════════════ -->
+  <div id="view-system" class="view" data-screen-label="System">
+    <div class="section-header">
+      <div class="section-title">System</div>
+      <div style="font-size:0.8rem;color:var(--text-muted);">Data backup, restore, and system management</div>
+    </div>
+
+    <!-- ── Export Data ── -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title">📤 Export Data</div>
+      <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:18px;">Download a full backup of all system data — reservations, guests, floor plan, host accounts, audit log, and custom tags. Use this regularly to protect against browser cache loss.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="exportSystemJSON()">⬇ Download JSON Backup</button>
+        <button class="btn btn-secondary" onclick="exportSystemCSV()">⬇ Download CSV Summary</button>
+      </div>
+      <div style="margin-top:14px;padding:12px 14px;background:var(--bg-alt);border-radius:9px;border:1px solid var(--border-2);">
+        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:8px;">Snapshot</div>
+        <div id="systemSnapshot" style="display:flex;gap:20px;flex-wrap:wrap;font-size:0.82rem;color:var(--text);"></div>
+      </div>
+    </div>
+
+    <!-- ── Import Data ── -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title">📥 Import Data</div>
+      <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:18px;">Restore the system from a previously exported <code style="font-size:0.8rem;background:var(--bg-alt);padding:2px 6px;border-radius:4px;">.json</code> backup file. This will <strong>merge</strong> imported data with your current data by default, or you can choose to fully replace it.</p>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+        <label class="btn btn-secondary" style="cursor:pointer;">
+          📂 Choose Backup File
+          <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="handleImportFile(event)">
+        </label>
+        <div id="importFileName" style="font-size:0.8rem;color:var(--text-muted);font-style:italic;"></div>
+      </div>
+      <div id="importPreview" style="display:none;margin-bottom:14px;padding:14px;background:var(--bg-alt);border-radius:9px;border:1px solid var(--border-2);">
+        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:8px;">File Contents</div>
+        <div id="importPreviewBody" style="font-size:0.82rem;color:var(--text);display:flex;gap:20px;flex-wrap:wrap;margin-bottom:14px;"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-success" onclick="doImport('merge')">✓ Merge with Current Data</button>
+          <button class="btn btn-secondary" onclick="doImport('replace')">↺ Replace All Data</button>
+        </div>
+      </div>
+      <div id="importError" style="display:none;color:var(--danger);font-size:0.8rem;margin-top:8px;"></div>
+    </div>
+
+    <!-- ── Danger Zone ── -->
+    <div class="card" id="dangerZoneCard" style="border:2px solid var(--danger);display:none;">
+      <div class="card-title" style="color:var(--danger);">⚠️ Danger Zone</div>
+      <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:20px;">These actions are irreversible. Only available to <strong>Admin</strong> accounts.</p>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--danger-pale);border-radius:10px;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div style="font-weight:600;font-size:0.9rem;margin-bottom:3px;">Load Sample Data</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);">Populate the system with demo reservations and guests for testing.</div>
+          </div>
+          <button class="btn btn-secondary" onclick="confirmSampleData()">Load Samples</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--danger-pale);border-radius:10px;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div style="font-weight:600;font-size:0.9rem;color:var(--danger);margin-bottom:3px;">Reset All Data</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);">Permanently delete all reservations, guests, floor plan, and audit log. Host accounts are kept.</div>
+          </div>
+          <button class="btn btn-danger" onclick="confirmResetAll()">Reset Everything</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden when not admin -->
+    <div id="dangerZoneLocked" style="margin-top:0;">
+      <div style="padding:14px 18px;background:var(--bg-alt);border-radius:10px;border:1px solid var(--border);font-size:0.82rem;color:var(--text-muted);display:flex;align-items:center;gap:10px;">
+        🔒 <span>Danger Zone is only accessible to <strong>Admin</strong> accounts. Log in as an admin to unlock.</span>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /content -->
 
 <!-- ═══ CREATE HOST MODAL ═══ -->
@@ -1416,16 +1490,10 @@
     <div class="modal-section-label">Additional Info</div>
     <div class="form-grid">
       <div class="form-group" style="grid-column:1/-1;">
-        <label>Details <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;color:#aaa;">(select all that apply)</span></label>
-        <div class="tag-picker" id="fDetails">
-          <label class="tag-opt"><input type="checkbox" value="Big Group"> Big Group</label>
-          <label class="tag-opt"><input type="checkbox" value="Birthday"> 🎂 Birthday</label>
-          <label class="tag-opt"><input type="checkbox" value="Alcohol"> 🍾 Alcohol</label>
-          <label class="tag-opt"><input type="checkbox" value="Regular Guest"> ⭐ Regular Guest</label>
-          <label class="tag-opt"><input type="checkbox" value="Friends & Family (5% Discount)"> 👨‍👩‍👧 Friends &amp; Family (5% Discount)</label>
-          <label class="tag-opt"><input type="checkbox" value="KOL"> 📣 KOL</label>
-          <label class="tag-opt"><input type="checkbox" value="BOD (10% Discount)"> 👔 BOD (10% Discount)</label>
-        </div>
+        <label>Details <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;color:#aaa;">(select all that apply)</span>
+          <button type="button" onclick="openTagManager('details')" style="margin-left:8px;background:none;border:none;cursor:pointer;font-size:0.68rem;color:var(--primary);font-weight:600;padding:0;text-decoration:underline;font-family:inherit;">⚙ Manage</button>
+        </label>
+        <div class="tag-picker" id="fDetails"></div>
       </div>
       <div class="form-group">
         <label>RSVP Via</label>
@@ -1448,13 +1516,10 @@
       </div>
       <div class="form-group">
         <label>Reservation Taken By</label>
-        <select id="fTakenBy">
-          <option value="">— Select —</option>
-          <option value="Rhenata">Rhenata</option>
-          <option value="Salsa">Salsa</option>
-          <option value="Nabila">Nabila</option>
-          <option value="Nina">Nina</option>
-        </select>
+        <div id="fTakenByDisplay" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;background:var(--surface-2);color:var(--text-muted);display:flex;align-items:center;gap:8px;">
+          <span id="fTakenByName" style="flex:1;">— No host logged in —</span>
+        </div>
+        <input type="hidden" id="fTakenBy">
       </div>
       <div class="form-group" style="grid-column:1/-1;">
         <label>Notes</label>
@@ -1545,18 +1610,44 @@
 
     <div class="modal-section-label" style="margin-top:20px;">Special Tags</div>
     <div class="form-group">
-      <label>Tags <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;color:#aaa;">(select all that apply)</span></label>
-      <div class="tag-picker" id="gfTags">
-        <label class="tag-opt"><input type="checkbox" value="Friends & Family (5% Discount)"> 👨‍👩‍👧 Friends &amp; Family (5% Discount)</label>
-        <label class="tag-opt"><input type="checkbox" value="KOL"> 📣 KOL</label>
-        <label class="tag-opt"><input type="checkbox" value="BOD (10% Discount)"> 👔 BOD (10% Discount)</label>
-      </div>
+      <label>Tags <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;color:#aaa;">(select all that apply)</span>
+        <button type="button" onclick="openTagManager('specialTags')" style="margin-left:8px;background:none;border:none;cursor:pointer;font-size:0.68rem;color:var(--primary);font-weight:600;padding:0;text-decoration:underline;font-family:inherit;">⚙ Manage</button>
+      </label>
+      <div class="tag-picker" id="gfTags"></div>
     </div>
 
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeGuestModal()">Cancel</button>
       <button class="btn btn-danger btn-sm" id="guestDelBtn" onclick="deleteGuestProfile()" style="display:none;">🗑 Delete Guest</button>
       <button class="btn btn-primary" onclick="saveGuestProfile()">Save Guest</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAG MANAGER MODAL ═══════════════════ -->
+<div class="modal-overlay" id="tagManagerModal">
+  <div class="modal" style="max-width:480px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <div class="modal-title" id="tagManagerTitle" style="margin-bottom:0;">Manage Tags</div>
+      <button onclick="closeTagManager()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);line-height:1;">✕</button>
+    </div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:18px;" id="tagManagerDesc"></div>
+
+    <!-- Existing tags list -->
+    <div id="tagManagerList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px;max-height:260px;overflow-y:auto;"></div>
+
+    <!-- Add new tag -->
+    <div style="border-top:1.5px solid var(--border);padding-top:16px;">
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:10px;">Add New Tag</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="text" id="newTagInput" placeholder="Tag label, e.g. VIP" style="flex:1;min-width:140px;font-size:0.88rem;padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);" onkeydown="if(event.key==='Enter')addCustomTag()">
+        <button class="btn btn-primary btn-sm" onclick="addCustomTag()">+ Add</button>
+      </div>
+      <div id="tagManagerError" style="color:var(--danger);font-size:0.74rem;margin-top:6px;min-height:18px;"></div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn btn-secondary" onclick="closeTagManager()">Done</button>
     </div>
   </div>
 </div>
@@ -1690,6 +1781,10 @@ function switchView(view, tabEl) {
     renderAccountsPanel();
     renderMembersList();
     renderAuditLog();
+  }
+  if (view === 'system') {
+    ensureTagData();
+    renderSystemTab();
   }
 }
 
@@ -2033,11 +2128,9 @@ function openModal(id) {
     document.getElementById('fRsvp').value    = b.rsvp||'';
     document.getElementById('fTakenBy').value = b.takenBy||'';
     document.getElementById('fEndTime').value = b.endTime||'';
-    // Details checkboxes
+    // Details checkboxes — render dynamically then restore checked state
     const details = b.details||[];
-    document.querySelectorAll('#fDetails input[type=checkbox]').forEach(cb => {
-      cb.checked = details.includes(cb.value);
-    });
+    renderTagPicker('fDetails', S.detailTags || DEFAULT_DETAIL_TAGS, details);
     refreshTableSelect(b.tableIds);
   } else {
     document.getElementById('fName').value    = '';
@@ -2052,7 +2145,7 @@ function openModal(id) {
     document.getElementById('fRsvp').value    = '';
     document.getElementById('fTakenBy').value = '';
     document.getElementById('fEndTime').value  = '';
-    document.querySelectorAll('#fDetails input[type=checkbox]').forEach(cb => { cb.checked = false; });
+    renderTagPicker('fDetails', S.detailTags || DEFAULT_DETAIL_TAGS, []);
     document.getElementById('autofillBanner').classList.remove('visible');
     refreshTableSelect();
   }
@@ -3030,16 +3123,14 @@ function openGuestModal(key) {
     document.getElementById('gfGender').value = g.gender||'';
     document.getElementById('gfNotes').value  = g.notes||'';
     const savedTags = g.tags || [];
-    document.querySelectorAll('#gfTags input[type=checkbox]').forEach(cb => {
-      cb.checked = savedTags.includes(cb.value);
-    });
+    renderTagPicker('gfTags', S.specialTags || DEFAULT_SPECIAL_TAGS, savedTags);
   } else {
     document.getElementById('gfName').value   = '';
     document.getElementById('gfPhone').value  = '';
     document.getElementById('gfEmail').value  = '';
     document.getElementById('gfGender').value = '';
     document.getElementById('gfNotes').value  = '';
-    document.querySelectorAll('#gfTags input[type=checkbox]').forEach(cb => { cb.checked = false; });
+    renderTagPicker('gfTags', S.specialTags || DEFAULT_SPECIAL_TAGS, []);
   }
 
   document.getElementById('guestModal').classList.add('open');
@@ -4094,16 +4185,8 @@ function renderAccountsPanel() {
 }
 
 function refreshTakenByOptions() {
-  ensureModData();
-  const sel = document.getElementById('fTakenBy');
-  if (!sel) return;
-  // Collect names — keep existing hard-coded names as fallback, add host accounts
-  const hardcoded = ['Rhenata','Salsa','Nabila','Nina'];
-  const fromHosts = S.hosts.map(h => h.name);
-  const all = [...new Set([...fromHosts, ...hardcoded])].sort();
-  const prev = sel.value;
-  sel.innerHTML = '<option value="">— Select —</option>' +
-    all.map(n => `<option value="${esc(n)}" ${n === prev ? 'selected' : ''}>${esc(n)}</option>`).join('');
+  // fTakenBy is now auto-filled from the active host — no dropdown to refresh
+  refreshTakenByDisplay();
 }
 
 function doHostLogin() {
@@ -4511,6 +4594,8 @@ window.openModal = function(id) {
   } else {
     window._bookingSnapshot = null;
   }
+  // Auto-fill taken-by from active host
+  refreshTakenByDisplay();
 };
 
 // Detect updates via save button — wrap the existing saveBooking
@@ -4538,13 +4623,339 @@ window.saveBooking = function() {
 };
 
 // ════════════════════════════════════════════
+//  TAKEN BY — auto-fill from active host
+// ════════════════════════════════════════════
+function refreshTakenByDisplay() {
+  const ah = getActiveHost();
+  const nameEl = document.getElementById('fTakenByName');
+  const hiddenEl = document.getElementById('fTakenBy');
+  if (!nameEl || !hiddenEl) return;
+  if (ah) {
+    nameEl.textContent = ah.name + '  #' + ah.loginId;
+    nameEl.style.color = 'var(--text)';
+    hiddenEl.value = ah.name;
+  } else {
+    nameEl.textContent = '— No host logged in —';
+    nameEl.style.color = 'var(--text-muted)';
+    hiddenEl.value = '';
+  }
+}
+
+// Patch openModal to refresh the taken-by display each time — merged into the existing wrapper above
+
+// ════════════════════════════════════════════
+//  CUSTOM TAGS
+// ════════════════════════════════════════════
+const DEFAULT_DETAIL_TAGS    = ['Big Group','Birthday','Alcohol','Regular Guest','Friends & Family (5% Discount)','KOL','BOD (10% Discount)'];
+const DEFAULT_SPECIAL_TAGS   = ['Friends & Family (5% Discount)','KOL','BOD (10% Discount)'];
+
+function ensureTagData() {
+  if (!S.detailTags)  S.detailTags  = [...DEFAULT_DETAIL_TAGS];
+  if (!S.specialTags) S.specialTags = [...DEFAULT_SPECIAL_TAGS];
+}
+
+function renderTagPicker(containerId, tagList, checkedValues) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const checked = checkedValues || [];
+  el.innerHTML = tagList.map(tag =>
+    `<label class="tag-opt"><input type="checkbox" value="${esc(tag)}" ${checked.includes(tag) ? 'checked' : ''}> ${esc(tag)}</label>`
+  ).join('');
+}
+
+function refreshAllTagPickers(checkedDetails, checkedSpecial) {
+  ensureTagData();
+  renderTagPicker('fDetails', S.detailTags, checkedDetails || []);
+  renderTagPicker('gfTags',   S.specialTags, checkedSpecial || []);
+}
+
+// ── Tag Manager ──
+let _tagManagerTarget = ''; // 'details' or 'specialTags'
+
+function openTagManager(target) {
+  ensureTagData();
+  _tagManagerTarget = target;
+  const isDetails = target === 'details';
+  document.getElementById('tagManagerTitle').textContent = isDetails ? 'Manage Detail Tags' : 'Manage Special Tags';
+  document.getElementById('tagManagerDesc').textContent  = isDetails
+    ? 'These tags appear in the New Booking form under "Details".'
+    : 'These tags appear in the Guest Profile form under "Special Tags".';
+  document.getElementById('newTagInput').value = '';
+  document.getElementById('tagManagerError').textContent = '';
+  renderTagManagerList();
+  document.getElementById('tagManagerModal').classList.add('open');
+}
+
+function closeTagManager() {
+  document.getElementById('tagManagerModal').classList.remove('open');
+  // Refresh pickers in open modal preserving checked state
+  const checkedDetails = [...document.querySelectorAll('#fDetails input:checked')].map(c => c.value);
+  const checkedSpecial = [...document.querySelectorAll('#gfTags input:checked')].map(c => c.value);
+  refreshAllTagPickers(checkedDetails, checkedSpecial);
+}
+
+function renderTagManagerList() {
+  ensureTagData();
+  const tags = _tagManagerTarget === 'details' ? S.detailTags : S.specialTags;
+  const el = document.getElementById('tagManagerList');
+  if (!el) return;
+  if (!tags.length) {
+    el.innerHTML = '<div style="font-size:0.82rem;color:var(--text-muted);padding:8px 0;">No tags yet. Add one below.</div>';
+    return;
+  }
+  el.innerHTML = tags.map((tag, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg-alt);border-radius:8px;border:1px solid var(--border-2);">
+      <span style="flex:1;font-size:0.86rem;">${esc(tag)}</span>
+      <button onclick="deleteCustomTag(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:0.9rem;padding:2px 6px;border-radius:5px;transition:background 0.15s;" title="Delete tag" onmouseover="this.style.background='var(--danger-pale)'" onmouseout="this.style.background='none'">✕</button>
+    </div>`).join('');
+}
+
+function addCustomTag() {
+  ensureTagData();
+  const input = document.getElementById('newTagInput');
+  const errEl = document.getElementById('tagManagerError');
+  const val   = input.value.trim();
+  if (!val) { errEl.textContent = 'Please enter a tag name.'; return; }
+  const tags = _tagManagerTarget === 'details' ? S.detailTags : S.specialTags;
+  if (tags.some(t => t.toLowerCase() === val.toLowerCase())) {
+    errEl.textContent = 'This tag already exists.'; return;
+  }
+  tags.push(val);
+  save();
+  input.value = '';
+  errEl.textContent = '';
+  renderTagManagerList();
+}
+
+function deleteCustomTag(idx) {
+  ensureTagData();
+  const tags = _tagManagerTarget === 'details' ? S.detailTags : S.specialTags;
+  if (idx < 0 || idx >= tags.length) return;
+  tags.splice(idx, 1);
+  save();
+  renderTagManagerList();
+}
+
+// ════════════════════════════════════════════
+//  SYSTEM TAB
+// ════════════════════════════════════════════
+function renderSystemTab() {
+  ensureTagData();
+  // Snapshot
+  const snap = document.getElementById('systemSnapshot');
+  if (snap) {
+    const items = [
+      { label: 'Reservations', val: (S.bookings||[]).length },
+      { label: 'Guests',       val: (S.guests||[]).length   },
+      { label: 'Tables',       val: (S.tables||[]).length   },
+      { label: 'Hosts',        val: (S.hosts||[]).length    },
+      { label: 'Audit Entries',val: (S.auditLog||[]).length },
+      { label: 'Detail Tags',  val: (S.detailTags||[]).length },
+      { label: 'Special Tags', val: (S.specialTags||[]).length },
+    ];
+    snap.innerHTML = items.map(i =>
+      `<div style="text-align:center;padding:8px 16px;background:var(--surface);border-radius:8px;border:1px solid var(--border-2);">
+        <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--primary);font-weight:700;">${i.val}</div>
+        <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-top:2px;">${i.label}</div>
+      </div>`
+    ).join('');
+  }
+
+  // Danger zone — admin only
+  const ah = getActiveHost();
+  const isAdmin = ah && ah.role === 'admin';
+  const dz   = document.getElementById('dangerZoneCard');
+  const lock = document.getElementById('dangerZoneLocked');
+  if (dz)   dz.style.display   = isAdmin ? '' : 'none';
+  if (lock) lock.style.display = isAdmin ? 'none' : '';
+}
+
+// ── Export JSON ──
+function exportSystemJSON() {
+  ensureTagData();
+  const data = {
+    _version:   '1.3.1',
+    _exported:  new Date().toISOString(),
+    bookings:   S.bookings   || [],
+    guests:     S.guests     || [],
+    tables:     S.tables     || [],
+    groups:     S.groups     || [],
+    hosts:      S.hosts      || [],
+    auditLog:   S.auditLog   || [],
+    detailTags: S.detailTags || [],
+    specialTags:S.specialTags|| [],
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'mallo-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('JSON backup downloaded');
+}
+
+// ── Export CSV Summary ──
+function exportSystemCSV() {
+  const rows = [['Type','ID','Guest / Name','Date','Time','Party Size','Status','Taken By','Tables','Notes']];
+  (S.bookings||[]).forEach(b => {
+    rows.push(['Booking', b.id||'', b.guestName||'', b.date||'', b.time||'', b.partySize||'', b.status||'', b.takenBy||'', (b.tableIds||[]).join(';'), (b.notes||'').replace(/\n/g,' ')]);
+  });
+  const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'mallo-summary-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV summary downloaded');
+}
+
+// ── Import ──
+let _importData = null;
+
+function handleImportFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  document.getElementById('importFileName').textContent = file.name;
+  document.getElementById('importError').style.display = 'none';
+  document.getElementById('importPreview').style.display = 'none';
+  _importData = null;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid format');
+      _importData = data;
+      // Show preview
+      const body = document.getElementById('importPreviewBody');
+      body.innerHTML = [
+        { label: 'Reservations', val: (data.bookings||[]).length },
+        { label: 'Guests',       val: (data.guests||[]).length   },
+        { label: 'Tables',       val: (data.tables||[]).length   },
+        { label: 'Hosts',        val: (data.hosts||[]).length    },
+        { label: 'Audit Entries',val: (data.auditLog||[]).length },
+        { label: 'Exported',     val: data._exported ? data._exported.slice(0,10) : '—' },
+      ].map(i =>
+        `<div style="text-align:center;padding:6px 14px;background:var(--surface);border-radius:8px;border:1px solid var(--border-2);">
+          <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--primary);font-weight:700;">${i.val}</div>
+          <div style="font-size:0.66rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-top:2px;">${i.label}</div>
+        </div>`
+      ).join('');
+      document.getElementById('importPreview').style.display = '';
+    } catch(err) {
+      const errEl = document.getElementById('importError');
+      errEl.textContent = 'Invalid file. Please choose a Mallo JSON backup.';
+      errEl.style.display = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function doImport(mode) {
+  if (!_importData) return;
+  if (mode === 'replace') {
+    if (!confirm('This will REPLACE all current data with the backup. Are you sure?')) return;
+    S.bookings    = _importData.bookings    || [];
+    S.guests      = _importData.guests      || [];
+    S.tables      = _importData.tables      || [];
+    S.groups      = _importData.groups      || [];
+    S.hosts       = _importData.hosts       || [];
+    S.auditLog    = _importData.auditLog    || [];
+    S.detailTags  = _importData.detailTags  || [...DEFAULT_DETAIL_TAGS];
+    S.specialTags = _importData.specialTags || [...DEFAULT_SPECIAL_TAGS];
+  } else {
+    // Merge — add items that don't already exist by id
+    function mergeById(existing, incoming) {
+      const ids = new Set((existing||[]).map(x => x.id));
+      return [...(existing||[]), ...(incoming||[]).filter(x => !ids.has(x.id))];
+    }
+    S.bookings    = mergeById(S.bookings,  _importData.bookings);
+    S.guests      = mergeById(S.guests,    _importData.guests);
+    S.tables      = mergeById(S.tables,    _importData.tables);
+    S.groups      = mergeById(S.groups,    _importData.groups);
+    S.hosts       = mergeById(S.hosts,     _importData.hosts);
+    S.auditLog    = mergeById(S.auditLog,  _importData.auditLog);
+    // Merge tags (union)
+    ensureTagData();
+    if (_importData.detailTags)  S.detailTags  = [...new Set([...S.detailTags,  ..._importData.detailTags])];
+    if (_importData.specialTags) S.specialTags = [...new Set([...S.specialTags, ..._importData.specialTags])];
+  }
+  save();
+  _importData = null;
+  document.getElementById('importPreview').style.display = 'none';
+  document.getElementById('importFileName').textContent = '';
+  document.getElementById('importFileInput').value = '';
+  renderSystemTab();
+  renderBookings();
+  renderGuests();
+  toast(mode === 'replace' ? 'Data restored from backup' : 'Data merged from backup');
+  logAudit('UPDATE', `System data ${mode === 'replace' ? 'replaced' : 'merged'} from backup file`);
+}
+
+// ── Danger Zone ──
+function confirmResetAll() {
+  const ah = getActiveHost();
+  if (!ah || ah.role !== 'admin') { toast('Admin access required'); return; }
+  if (!confirm('⚠️ This will permanently delete ALL reservations, guests, floor plan, and audit log.\n\nHost accounts will be kept.\n\nThis cannot be undone. Continue?')) return;
+  const hostsBackup = S.hosts || [];
+  S.bookings    = [];
+  S.guests      = [];
+  S.tables      = [];
+  S.groups      = [];
+  S.auditLog    = [];
+  S.detailTags  = [...DEFAULT_DETAIL_TAGS];
+  S.specialTags = [...DEFAULT_SPECIAL_TAGS];
+  S.hosts       = hostsBackup;
+  save();
+  renderBookings();
+  renderGuests();
+  renderSystemTab();
+  toast('All data reset');
+  logAudit('DELETE', 'Full system reset by admin');
+}
+
+function confirmSampleData() {
+  const ah = getActiveHost();
+  if (!ah || ah.role !== 'admin') { toast('Admin access required'); return; }
+  if (!confirm('Load sample demo data? This will add sample bookings and guests to your current data.')) return;
+  const today = new Date().toISOString().slice(0,10);
+  const sampleBookings = [
+    { id:'smp1', guestName:'Isabella Rossi',  partySize:4, date:today, time:'19:00', endTime:'21:00', tableIds:[], notes:'Anniversary dinner', status:'confirmed', phone:'081234560001', email:'', gender:'female', rsvp:'WA',    takenBy:'Sample', details:['Birthday'] },
+    { id:'smp2', guestName:'Marco Bianchi',   partySize:2, date:today, time:'20:00', endTime:'22:00', tableIds:[], notes:'',                   status:'confirmed', phone:'081234560002', email:'', gender:'male',   rsvp:'Phone', takenBy:'Sample', details:['Regular Guest'] },
+    { id:'smp3', guestName:'Sofia Conti',     partySize:6, date:today, time:'18:30', endTime:'20:30', tableIds:[], notes:'Vegetarian options',  status:'seated',    phone:'081234560003', email:'', gender:'female', rsvp:'WA',    takenBy:'Sample', details:['Big Group','Alcohol'] },
+  ];
+  const sampleGuests = [
+    { key:'isabella rossi', name:'Isabella Rossi', phone:'081234560001', email:'', gender:'female', tags:['Birthday'], firstSeen:today },
+    { key:'marco bianchi',  name:'Marco Bianchi',  phone:'081234560002', email:'', gender:'male',   tags:['Regular Guest'], firstSeen:today },
+    { key:'sofia conti',    name:'Sofia Conti',    phone:'081234560003', email:'', gender:'female',  tags:['Big Group'], firstSeen:today },
+  ];
+  function mergeById(existing, incoming) {
+    const ids = new Set((existing||[]).map(x => x.id||x.key));
+    return [...(existing||[]), ...(incoming||[]).filter(x => !ids.has(x.id||x.key))];
+  }
+  S.bookings = mergeById(S.bookings, sampleBookings);
+  S.guests   = mergeById(S.guests,   sampleGuests);
+  save();
+  renderBookings();
+  renderGuests();
+  renderSystemTab();
+  toast('Sample data loaded');
+  logAudit('UPDATE', 'Sample data loaded by admin');
+}
+
+// ════════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════════
 (function initModerator() {
   ensureModData();
+  ensureTagData();
   _lastBookingCount = S.bookings.length;
   refreshModTabVisibility();
   renderHeaderHostChip();
+  refreshAllTagPickers();
 
   // Close modals on overlay click
   document.getElementById('createHostModal').addEventListener('click', function(e) {
@@ -4552,6 +4963,9 @@ window.saveBooking = function() {
   });
   document.getElementById('changePinModal').addEventListener('click', function(e) {
     if (e.target === this) closeChangePinModal();
+  });
+  document.getElementById('tagManagerModal').addEventListener('click', function(e) {
+    if (e.target === this) closeTagManager();
   });
 })();
 </script>
