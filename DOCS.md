@@ -1,8 +1,8 @@
-# Mallo RMS — Technical Documentation
+# RMS — Technical Documentation
 
-**Version:** 1.3.1  
-**Product:** Mallo Trattoria Italiana — Reservation Management System  
-**Last Updated:** May 1, 2026
+**Version:** 2.0.0  
+**Product:**  Reservation Management System  
+**Last Updated:** May 3, 2026
 
 ---
 
@@ -26,7 +26,7 @@
 
 ## 1. Overview
 
-Mallo RMS is a single-device, browser-based reservation management system for Mallo Trattoria Italiana. It runs as a local Node.js application — the frontend is a single HTML file served by a minimal Express server, and all data is persisted to a JSON file on disk.
+RMS is a single-device, browser-based reservation management system for Mallo Trattoria Italiana. It runs as a local Node.js application — the frontend is a single HTML file served by a minimal Express server, and all data is persisted to a JSON file on disk.
 
 **Key capabilities:**
 - Reservation creation, editing, rescheduling, and cancellation
@@ -153,7 +153,7 @@ All data is stored as a single JSON object in `data/db.json`.
 
 ```json
 {
-  "_version":   "1.3.1",
+  "_version":   "2.0.0",
   "_created":   "ISO 8601 timestamp",
   "_saved":     "ISO 8601 timestamp",
   "bookings":   [ ...Booking ],
@@ -454,6 +454,10 @@ When the server comes back online, a page refresh will load from `db.json` and r
 ---
 
 ## 13. Changelog
+
+### v2.0.0 (Alpha) — May 3, 2026
+- Redesigned Project Architecture - Data redundancy using db.json to accomodate backup from browser 'localstorage'
+- Rebuilt Tech Stack - Express server using node.js serving the HTML index to initiate data redundancy. 
 
 ### v1.3.1 — May 1, 2026
 - **Quick-switch PIN pad** — host chip in header is now a clickable button; PIN alone identifies the user, no dropdown required
