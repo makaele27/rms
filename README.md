@@ -1,7 +1,7 @@
 # Mallo RMS
 
-**Reservation Management System — Mallo Trattoria Italiana**  
-Version 1.3.1 · May 2026
+**Reservation Management System**  
+Version 2.0.0 (Alpha Build) · May 2026
 
 ---
 
@@ -13,18 +13,27 @@ Version 1.3.1 · May 2026
 ### Install & Run
 
 ```bash
-cd mallo-rms
-npm install
+Run the batch file (start.bat) to initiate npm start
+
+@echo off
+title RMS
+echo.
+echo  Starting RMS...
+echo  Open http://localhost:3000 in your browser.
+echo  Press Ctrl+C to stop.
+echo.
 npm start
+pause
+
 ```
 
 Then open **http://localhost:3000** in your browser.
 
 ```
   ╔═══════════════════════════════════╗
-  ║       Mallo RMS  v1.3.1           ║
+  ║       RMS v2.0.0 (Alpha Build)    ║
   ╠═══════════════════════════════════╣
-  ║  Open → http://localhost:3000      ║
+  ║  Open → http://localhost:3000     ║
   ║  Data → data/db.json              ║
   ╚═══════════════════════════════════╝
 ```
@@ -97,5 +106,3 @@ See **[DOCS.md](./DOCS.md)** for:
 - Full changelog
 
 ---
-
-*Internal tool — Mallo Trattoria Italiana. All rights reserved.*
