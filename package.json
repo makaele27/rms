@@ -1,0 +1,21 @@
+{
+  "name": "mallo-rms",
+  "version": "1.3.1",
+  "description": "Mallo Trattoria Italiana — Reservation Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev":   "npx nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

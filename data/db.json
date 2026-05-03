@@ -1,0 +1,120 @@
+{
+  "_version": "1.3.1",
+  "_created": "2026-05-01T00:00:00.000Z",
+  "bookings": [],
+  "guests": [
+    {
+      "id": "gu1777645671772",
+      "key": "bronny",
+      "name": "Bronny",
+      "phone": "+62 812 3456 7890",
+      "email": "",
+      "gender": "male",
+      "notes": "",
+      "tags": [],
+      "firstSeen": "2026-05-01"
+    },
+    {
+      "id": "gu1777645677626",
+      "key": "jenny",
+      "name": "Jenny",
+      "phone": "",
+      "email": "",
+      "gender": "",
+      "notes": "",
+      "tags": [],
+      "firstSeen": "2026-05-01"
+    }
+  ],
+  "tables": [],
+  "groups": [],
+  "hosts": [
+    {
+      "id": "h1777645700671",
+      "name": "Mika",
+      "role": "admin",
+      "pin": "2709",
+      "loginId": "4443",
+      "perms": {
+        "bookings": true,
+        "floorplan": true,
+        "guests": true,
+        "reports": true,
+        "moderator": true
+      },
+      "createdAt": "2026-05-01T14:28:20.671Z"
+    }
+  ],
+  "auditLog": [
+    {
+      "id": "al17776457453062zvf",
+      "ts": "2026-05-01T14:29:05.306Z",
+      "action": "LOGIN",
+      "details": "Mika logged in",
+      "hostId": "h1777645700671",
+      "hostName": "Mika",
+      "loginId": "4443"
+    },
+    {
+      "id": "al1777645741497ot20",
+      "ts": "2026-05-01T14:29:01.497Z",
+      "action": "LOGOUT",
+      "details": "Mika logged out",
+      "hostId": "h1777645700671",
+      "hostName": "Mika",
+      "loginId": "4443"
+    },
+    {
+      "id": "al1777645721675zglw",
+      "ts": "2026-05-01T14:28:41.675Z",
+      "action": "UPDATE",
+      "details": "Host account updated: Mika (Admin)",
+      "hostId": "h1777645700671",
+      "hostName": "Mika",
+      "loginId": "4443"
+    },
+    {
+      "id": "al17776457055878txg",
+      "ts": "2026-05-01T14:28:25.587Z",
+      "action": "LOGIN",
+      "details": "Mika logged in",
+      "hostId": "h1777645700671",
+      "hostName": "Mika",
+      "loginId": "4443"
+    },
+    {
+      "id": "al1777645700671hhu8",
+      "ts": "2026-05-01T14:28:20.671Z",
+      "action": "CREATE",
+      "details": "Host account created: Mika (Host) — Login ID #4443",
+      "hostId": null,
+      "hostName": "System",
+      "loginId": "—"
+    },
+    {
+      "id": "al1777645643916nesd",
+      "ts": "2026-05-01T14:27:23.916Z",
+      "action": "UPDATE",
+      "details": "System data merged from backup file",
+      "hostId": null,
+      "hostName": "System",
+      "loginId": "—"
+    }
+  ],
+  "detailTags": [
+    "Big Group",
+    "Birthday",
+    "Alcohol",
+    "Regular Guest",
+    "Friends & Family (5% Discount)",
+    "KOL",
+    "BOD (10% Discount)"
+  ],
+  "specialTags": [
+    "Friends & Family (5% Discount)",
+    "KOL",
+    "BOD (10% Discount)",
+    "Bro"
+  ],
+  "_saved": "2026-05-01T14:29:05.707Z"
+}
