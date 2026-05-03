@@ -107,9 +107,9 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log('');
   console.log('  ╔═══════════════════════════════════╗');
-  console.log('  ║       Mallo RMS  v1.3.1           ║');
+  console.log('  ║     RMS v2.0.0 (Alpha Build)      ║');
   console.log('  ╠═══════════════════════════════════╣');
-  console.log(`  ║  Open → http://localhost:${PORT}      ║`);
+  console.log(`  ║  Open → http://localhost:${PORT}  ║`);
   console.log(`  ║  Data → data/db.json              ║`);
   console.log('  ╚═══════════════════════════════════╝');
   console.log('');
