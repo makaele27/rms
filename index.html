@@ -2145,7 +2145,10 @@ function openModal(id) {
     document.getElementById('fRsvp').value    = '';
     document.getElementById('fTakenBy').value = '';
     document.getElementById('fEndTime').value  = '';
-    renderTagPicker('fDetails', S.detailTags || DEFAULT_DETAIL_TAGS, []);
+    // Pre-check tags from the guest profile if the guest is already known
+    const existingGuest = S.guests ? S.guests.find(g => g.key === guestKey(document.getElementById('fName').value || '')) : null;
+    const preTags = existingGuest ? (existingGuest.tags || []) : [];
+    renderTagPicker('fDetails', S.detailTags || DEFAULT_DETAIL_TAGS, preTags);
     document.getElementById('autofillBanner').classList.remove('visible');
     refreshTableSelect();
   }
@@ -2959,12 +2962,11 @@ function upsertGuest({ name, phone, email, gender, tags }) {
   if (email)  g.email  = email;
   if (gender) g.gender = gender;
   g.name = name; // always keep latest casing
-  // Merge discount/special tags into the guest profile
+  // Merge ALL booking detail tags into the guest profile (full sync)
   if (!g.tags) g.tags = [];
-  const TRACKED_TAGS = ['Friends & Family (5% Discount)', 'KOL', 'BOD (10% Discount)'];
   if (tags && tags.length) {
     tags.forEach(t => {
-      if (TRACKED_TAGS.includes(t) && !g.tags.includes(t)) g.tags.push(t);
+      if (!g.tags.includes(t)) g.tags.push(t);
     });
   }
 }
@@ -3067,13 +3069,23 @@ function renderGuests() {
             ${g.firstSeen ? `<span>Since ${g.firstSeen}</span>` : ''}
           </div>
           ${g.notes ? `<div style="font-size:0.76rem;color:var(--coffee);margin-top:4px;font-style:italic;">📋 ${esc(g.notes)}</div>` : ''}
-          ${g.tags && g.tags.length ? `<div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;">${g.tags.map(t => {
-            const colors = {
+          ${g.tags && g.tags.length ? `<div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;">${g.tags.map((t, idx) => {
+            const colorPalette = [
+              'background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;',
+              'background:#e3f2fd;color:#1565c0;border:1px solid #90caf9;',
+              'background:#fff3e0;color:#e65100;border:1px solid #ffcc80;',
+              'background:#f3e5f5;color:#6a1b9a;border:1px solid #ce93d8;',
+              'background:#fce4ec;color:#880e4f;border:1px solid #f48fb1;',
+              'background:#e0f2f1;color:#00695c;border:1px solid #80cbc4;',
+              'background:#fff8e1;color:#c9922a;border:1px solid #ffe082;',
+              'background:#ede7f6;color:#4527a0;border:1px solid #b39ddb;',
+            ];
+            const namedColors = {
               'Friends & Family (5% Discount)': 'background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;',
               'KOL':                            'background:#e3f2fd;color:#1565c0;border:1px solid #90caf9;',
               'BOD (10% Discount)':             'background:#fff3e0;color:#e65100;border:1px solid #ffcc80;',
             };
-            const style = colors[t] || 'background:#f3e5f5;color:#6a1b9a;border:1px solid #ce93d8;';
+            const style = namedColors[t] || colorPalette[idx % colorPalette.length];
             return `<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;${style}">${esc(t)}</span>`;
           }).join('')}</div>` : ''}
           ${recentPills ? `<div class="guest-visits">${recentPills}</div>` : ''}
@@ -3101,6 +3113,9 @@ function prefillBookingFromGuest(key) {
   document.getElementById('fPhone').value  = g.phone||'';
   document.getElementById('fEmail').value  = g.email||'';
   document.getElementById('fGender').value = g.gender||'';
+  // Pre-check this guest's saved tags in the booking detail picker
+  ensureTagData();
+  renderTagPicker('fDetails', S.detailTags || DEFAULT_DETAIL_TAGS, g.tags || []);
 }
 
 // ════════════════════════════════════════════
@@ -3189,6 +3204,16 @@ function saveGuestProfile() {
     if (gender) g.gender = gender;
     g.notes  = notes;
     g.tags   = tags;
+    // Sync updated tags back to all existing bookings for this guest
+    S.bookings.forEach(b => {
+      if (guestKey(b.guestName) === g.key) {
+        // Merge: keep tags that are in the current detailTags list
+        const detailTagSet = new Set(S.detailTags || DEFAULT_DETAIL_TAGS);
+        // Replace booking details with the new guest tags (only detail-tag items)
+        const nonTagDetails = (b.details||[]).filter(d => !detailTagSet.has(d));
+        b.details = [...nonTagDetails, ...tags.filter(t => detailTagSet.has(t))];
+      }
+    });
     toast('Guest profile updated');
   } else {
     // New guest
