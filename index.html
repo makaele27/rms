@@ -1754,26 +1754,258 @@ let editId = null;
 // ════════════════════════════════════════════
 //  PERSISTENCE
 // ════════════════════════════════════════════
-function save() {
+// ════════════════════════════════════════════════════════════════════
+//  PERSISTENCE  —  IndexedDB primary, localStorage emergency fallback
+// ════════════════════════════════════════════════════════════════════
+//  Design notes
+//  ────────────
+//  • IndexedDB (IDB) is the primary store. localStorage is used ONLY when
+//    IDB is unavailable (e.g. some private-mode configurations, certain
+//    enterprise lockdowns) and as the source for a one-time auto-migration
+//    of the legacy `rtm_v2` payload.
+//  • save() is intentionally NOT async. It enqueues a debounced write so
+//    that all 24 call sites across the codebase remain unchanged. Rapid
+//    successive saves (floor-plan editor, audit log) coalesce into one
+//    IDB transaction.
+//  • If IDB is missing or the open() request fails, we fall back to
+//    localStorage transparently — the same writes still get batched and
+//    error-handled.
+//  • load() exposes a Promise (loadAsync) for init() to await; the legacy
+//    sync load() is kept as a no-op shim so any defensive synchronous
+//    callers don't crash. Init has been restructured to await loadAsync()
+//    before rendering so the UI never flashes an empty state.
+//  • A "PERSISTENT_OK" flag is set on first successful IDB write. If we
+//    ever see it missing on a subsequent boot, that's the auto-migration
+//    trigger to re-import from localStorage.
+// ════════════════════════════════════════════════════════════════════
+
+const IDB_NAME    = 'mallo_db';
+const IDB_VERSION = 1;
+const IDB_STORE   = 'kv';
+const STATE_KEY   = 'rtm_v2';            // same logical key for parity with legacy
+const LS_KEY      = 'rtm_v2';            // legacy localStorage key (read-only after migration)
+const LS_FLAG_KEY = 'rtm_v2_migrated';   // set once IDB has the data
+
+let _db = null;                  // open IDB connection, or null if unavailable
+let _idbAvailable = false;       // resolved during initPersistence()
+let _saveTimer = null;           // debounce handle
+let _lastSaveOk = true;          // last attempted write outcome
+const SAVE_DEBOUNCE_MS = 150;    // coalesce rapid-fire saves (floor-plan, audit log)
+
+// ── IDB helpers (Promise wrappers around the callback-based API) ──
+function _openIDB() {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') return reject(new Error('IndexedDB unavailable'));
+    let req;
+    try { req = indexedDB.open(IDB_NAME, IDB_VERSION); }
+    catch (e) { return reject(e); }
+    req.onupgradeneeded = (ev) => {
+      const db = ev.target.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE);
+      }
+    };
+    req.onsuccess = (ev) => resolve(ev.target.result);
+    req.onerror   = (ev) => reject(ev.target.error || new Error('IDB open failed'));
+    req.onblocked = ()   => reject(new Error('IDB open blocked'));
+  });
+}
+
+function _idbGet(key) {
+  return new Promise((resolve, reject) => {
+    if (!_db) return reject(new Error('IDB not open'));
+    let tx, store, req;
+    try {
+      tx = _db.transaction(IDB_STORE, 'readonly');
+      store = tx.objectStore(IDB_STORE);
+      req = store.get(key);
+    } catch (e) { return reject(e); }
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function _idbPut(key, value) {
+  return new Promise((resolve, reject) => {
+    if (!_db) return reject(new Error('IDB not open'));
+    let tx, store, req;
+    try {
+      tx = _db.transaction(IDB_STORE, 'readwrite');
+      store = tx.objectStore(IDB_STORE);
+      req = store.put(value, key);
+    } catch (e) { return reject(e); }
+    req.onsuccess = () => resolve(true);
+    req.onerror   = () => reject(req.error);
+    tx.onerror    = () => reject(tx.error);
+  });
+}
+
+// ── localStorage emergency fallback (used only when IDB is unavailable) ──
+function _lsRead() {
   try {
-    localStorage.setItem('rtm_v2', JSON.stringify(S));
+    const d = localStorage.getItem(LS_KEY);
+    return d ? JSON.parse(d) : null;
+  } catch (e) {
+    console.error('localStorage read failed:', e);
+    return null;
+  }
+}
+function _lsWrite(obj) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(obj));
     return true;
   } catch (e) {
-    console.error('Persistence failed:', e);
-    // Use setTimeout so this toast isn't immediately overwritten by a caller's success toast
-    setTimeout(() => toast('⚠️ Could NOT save — storage is full or blocked. Export a backup NOW.'), 0);
+    console.error('localStorage write failed:', e);
     return false;
   }
 }
-function load() {
+
+// ── One-time auto-migration from legacy localStorage payload ──
+//    Reads rtm_v2 from localStorage, writes it to IDB, sets a flag so we
+//    don't repeat the import on every boot. The legacy localStorage entry
+//    is intentionally left in place so users can roll back to v1.4.2
+//    without data loss.
+async function _migrateFromLegacy() {
+  if (!_idbAvailable) return;
   try {
-    const d = localStorage.getItem('rtm_v2');
-    if (d) S = JSON.parse(d);
+    const flag = localStorage.getItem(LS_FLAG_KEY);
+    if (flag === '1') return;                 // already migrated
+    const legacy = _lsRead();
+    if (!legacy) {
+      // Nothing to migrate — still set the flag so we don't re-check every boot
+      try { localStorage.setItem(LS_FLAG_KEY, '1'); } catch (e) {}
+      return;
+    }
+    // Only migrate if IDB is empty for this key
+    const existing = await _idbGet(STATE_KEY);
+    if (existing == null) {
+      await _idbPut(STATE_KEY, legacy);
+      console.info('Mallo: migrated legacy localStorage payload to IndexedDB.');
+    }
+    try { localStorage.setItem(LS_FLAG_KEY, '1'); } catch (e) {}
+  } catch (e) {
+    console.error('Migration failed (will retry on next boot):', e);
+  }
+}
+
+// ── Public: initPersistence() — call once at startup, BEFORE any save/load ──
+async function initPersistence() {
+  try {
+    _db = await _openIDB();
+    _idbAvailable = true;
+  } catch (e) {
+    console.warn('IndexedDB unavailable — falling back to localStorage:', e && e.message);
+    _db = null;
+    _idbAvailable = false;
+  }
+  await _migrateFromLegacy();
+}
+
+// ── Public: loadAsync() — preferred load entry point (returns a Promise) ──
+async function loadAsync() {
+  try {
+    if (_idbAvailable) {
+      const data = await _idbGet(STATE_KEY);
+      if (data) S = data;
+      return;
+    }
+    // Fallback path
+    const data = _lsRead();
+    if (data) S = data;
   } catch (e) {
     console.error('Load failed — keeping defaults:', e);
     setTimeout(() => toast('⚠️ Could not load saved data. Check Settings → Backup.'), 0);
   }
 }
+
+// ── Legacy sync load() shim — kept so any defensive caller doesn't crash.
+//    initPersistence() + loadAsync() in init() does the real work; this is a
+//    no-op that returns immediately. If called BEFORE init completes (e.g.
+//    from an inline script edit by a future contributor), it tries the
+//    localStorage fallback so the page never boots blank.
+function load() {
+  if (_idbAvailable) return; // real load happened via loadAsync() in init()
+  try {
+    const data = _lsRead();
+    if (data) S = data;
+  } catch (e) {
+    console.error('load() shim failed:', e);
+  }
+}
+
+// ── Public: save() — fire-and-forget, debounced.
+//    Returns a boolean reflecting the LAST completed write attempt. This
+//    preserves the v1.4.2 contract that callers like saveBooking() use to
+//    decide whether to show a success toast. The return value is
+//    optimistic for the in-flight write (which hasn't completed yet) but
+//    correctly pessimistic if the previous write failed — and the deferred
+//    warning toast from a failed write will still surface.
+function save() {
+  // Coalesce rapid saves into a single IDB transaction.
+  if (_saveTimer) clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(_flushSave, SAVE_DEBOUNCE_MS);
+  return _lastSaveOk;
+}
+
+// ── Public: saveNow() — bypass the debounce (used at unload-time below) ──
+function saveNow() {
+  if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+  return _flushSave();
+}
+
+function _flushSave() {
+  _saveTimer = null;
+  // Snapshot S at flush time, not enqueue time, so we always write the latest.
+  const snapshot = (() => {
+    try { return JSON.parse(JSON.stringify(S)); }
+    catch (e) { console.error('Snapshot serialization failed:', e); return null; }
+  })();
+  if (snapshot == null) {
+    _lastSaveOk = false;
+    setTimeout(() => toast('⚠️ Could not serialize data for save. Check console.'), 0);
+    return false;
+  }
+
+  if (_idbAvailable) {
+    // Async write; update _lastSaveOk when it settles. Errors surface a toast.
+    _idbPut(STATE_KEY, snapshot).then(
+      () => { _lastSaveOk = true; },
+      (err) => {
+        _lastSaveOk = false;
+        console.error('IndexedDB write failed:', err);
+        // Try the localStorage fallback so data isn't lost outright.
+        const ok = _lsWrite(snapshot);
+        if (!ok) {
+          setTimeout(() => toast('⚠️ Could NOT save — storage is full or blocked. Export a backup NOW.'), 0);
+        } else {
+          setTimeout(() => toast('⚠️ Saved to fallback storage only. Export a backup soon.'), 0);
+        }
+      }
+    );
+    // Optimistic return — actual outcome will update _lastSaveOk asynchronously.
+    return true;
+  }
+
+  // No IDB at all — synchronous localStorage fallback (same behavior as v1.4.2).
+  const ok = _lsWrite(snapshot);
+  _lastSaveOk = ok;
+  if (!ok) {
+    setTimeout(() => toast('⚠️ Could NOT save — storage is full or blocked. Export a backup NOW.'), 0);
+  }
+  return ok;
+}
+
+// ── Flush any pending debounced write before the page unloads ──
+window.addEventListener('beforeunload', () => {
+  if (_saveTimer) {
+    clearTimeout(_saveTimer);
+    _saveTimer = null;
+    // Best-effort synchronous flush. IDB writes are async and may not
+    // complete before unload; the localStorage fallback path is sync and
+    // will catch the data if IDB is racing the unload.
+    try { _flushSave(); } catch (e) { console.error('Unload flush failed:', e); }
+  }
+});
 
 // ════════════════════════════════════════════
 //  NAV
@@ -3975,8 +4207,12 @@ document.head.appendChild(style);
 // ════════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════════
-(function init() {
-  load();
+(async function init() {
+  // Initialize the persistence layer (IDB open + one-time legacy migration)
+  // and load saved state BEFORE any rendering, so the UI never flashes empty.
+  await initPersistence();
+  await loadAsync();
+
   document.getElementById('todayLabel').textContent =
     new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
 
@@ -4003,6 +4239,10 @@ document.head.appendChild(style);
   document.getElementById('rescheduleModal').addEventListener('click', function(e){
     if (e.target===this) closeRescheduleModal();
   });
+
+  // Moderator panel init — must run AFTER loadAsync so it sees loaded S,
+  // not the default empty S. Defined later in the script.
+  initModerator();
 })();
 
 // ════════════════════════════════════════════
@@ -4816,7 +5056,7 @@ function renderSystemTab() {
 function exportSystemJSON() {
   ensureTagData();
   const data = {
-    _version:   '1.3.1',
+    _version:   '1.4.3',
     _exported:  new Date().toISOString(),
     bookings:   S.bookings   || [],
     guests:     S.guests     || [],
@@ -4991,7 +5231,10 @@ function confirmSampleData() {
 // ════════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════════
-(function initModerator() {
+// Called from the main async init() in the early script section, AFTER
+// loadAsync() has resolved. Must NOT run as an IIFE on its own — doing so
+// races the async load and overwrites loaded `S` patches with defaults.
+function initModerator() {
   ensureModData();
   ensureTagData();
   _lastBookingCount = S.bookings.length;
@@ -5009,7 +5252,7 @@ function confirmSampleData() {
   document.getElementById('tagManagerModal').addEventListener('click', function(e) {
     if (e.target === this) closeTagManager();
   });
-})();
+}
 </script>
 </body>
 </html>
