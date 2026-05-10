@@ -1754,12 +1754,25 @@ let editId = null;
 // ════════════════════════════════════════════
 //  PERSISTENCE
 // ════════════════════════════════════════════
-function save() { localStorage.setItem('rtm_v2', JSON.stringify(S)); }
+function save() {
+  try {
+    localStorage.setItem('rtm_v2', JSON.stringify(S));
+    return true;
+  } catch (e) {
+    console.error('Persistence failed:', e);
+    // Use setTimeout so this toast isn't immediately overwritten by a caller's success toast
+    setTimeout(() => toast('⚠️ Could NOT save — storage is full or blocked. Export a backup NOW.'), 0);
+    return false;
+  }
+}
 function load() {
   try {
     const d = localStorage.getItem('rtm_v2');
     if (d) S = JSON.parse(d);
-  } catch(e) {}
+  } catch (e) {
+    console.error('Load failed — keeping defaults:', e);
+    setTimeout(() => toast('⚠️ Could not load saved data. Check Settings → Backup.'), 0);
+  }
 }
 
 // ════════════════════════════════════════════
@@ -2319,19 +2332,23 @@ function saveBooking() {
 
   const record = { guestName:name, partySize:size, date, time, endTime: endTime||'', tableIds, notes, status, phone, email, gender, rsvp, takenBy, details };
 
+  const wasEdit = !!editId;
   if (editId) {
     const i = S.bookings.findIndex(b=>b.id===editId);
     if (i!==-1) S.bookings[i] = { ...S.bookings[i], ...record };
-    toast('Reservation updated');
   } else {
     S.bookings.push({ id:'b'+Date.now(), ...record });
-    toast('Reservation saved');
   }
 
   // Update guest profile (including special tags)
   upsertGuest({ name, phone, email, gender, tags: details });
 
-  save(); closeModal(); renderBookings();
+  const ok = save();
+  closeModal();
+  renderBookings();
+  // Only show the success toast if the data actually persisted.
+  // If save() failed, it has already shown its own warning toast.
+  if (ok) toast(wasEdit ? 'Reservation updated' : 'Reservation saved');
   // Keep Daily Summary and its live timers in sync if it is active
   if (document.getElementById('view-daily').classList.contains('active')) {
     renderDaily();
